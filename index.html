@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mërgim & Leonita — Ftesë</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Great+Vibes&family=Cinzel:wght@300;400&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold: #b8965a;
+  --gold-light: #d4b47a;
+  --gold-dark: #8a6c38;
+  --cream: #faf6ef;
+  --parchment: #e0d4be;
+  --ink: #2a1f0e;
+  --ink-mid: #5a4a30;
+  --ink-light: #8a7a60;
+}
+
+html, body {
+  width: 100%; min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 30%, #1e1508 0%, #0d0a04 70%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  overflow-x: hidden;
+}
+
+#dust { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+.scene {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 50px 20px 80px;
+  width: 100%;
+  max-width: 460px;
+}
+
+/* ═══════════════════════
+   ENVELOPE
+═══════════════════════ */
+.env-container {
+  position: relative;
+  width: 380px;
+  /* perspective for 3D flap */
+  perspective: 900px;
+}
+
+.env-body-wrap {
+  position: relative;
+  width: 380px;
+  height: 250px;
+}
+
+.env-svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.8)) drop-shadow(0 0 30px rgba(184,150,90,0.1)); }
+
+/* Flap */
+.env-flap-wrap {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 160px;
+  transform-origin: top center;
+  transform: rotateX(0deg);
+  transition: transform 1.2s cubic-bezier(0.4,0,0.15,1);
+  transform-style: preserve-3d;
+  z-index: 5;
+}
+.env-flap-wrap.open {
+  transform: rotateX(-185deg);
+}
+.env-flap-svg { width: 100%; display: block; }
+
+/* Wax seal */
+.seal-abs {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  transition: opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s;
+  pointer-events: none;
+}
+.seal-abs.hidden {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3) rotate(20deg);
+}
+
+/* ═══════════════════════
+   RIBBON SYSTEM
+═══════════════════════ */
+.ribbon-system {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Vertical band */
+.rb-v {
+  position: absolute;
+  left: calc(50% - 14px);
+  top: 0; bottom: 0;
+  width: 28px;
+  background:
+    linear-gradient(90deg,
+      rgba(80,5,5,0.9) 0%,
+      rgba(140,20,20,1) 20%,
+      rgba(200,60,60,0.95) 48%,
+      rgba(200,60,60,0.95) 52%,
+      rgba(140,20,20,1) 80%,
+      rgba(80,5,5,0.9) 100%
+    );
+  box-shadow: 0 0 8px rgba(0,0,0,0.5);
+  transform-origin: center top;
+  transition: transform 0.7s cubic-bezier(0.4,0,0.2,1) 0.05s, opacity 0.5s ease 0.1s;
+}
+.rb-h {
+  position: absolute;
+  top: calc(50% - 14px);
+  left: 0; right: 0;
+  height: 28px;
+  background:
+    linear-gradient(180deg,
+      rgba(80,5,5,0.9) 0%,
+      rgba(140,20,20,1) 20%,
+      rgba(200,60,60,0.95) 48%,
+      rgba(200,60,60,0.95) 52%,
+      rgba(140,20,20,1) 80%,
+      rgba(80,5,5,0.9) 100%
+    );
+  box-shadow: 0 0 8px rgba(0,0,0,0.5);
+  transform-origin: center center;
+  transition: transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease 0.1s;
+}
+
+/* Ribbon light sheen */
+.rb-v::after, .rb-h::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 30%, rgba(255,180,180,0.15) 50%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Untied state */
+.ribbon-system.untied .rb-v {
+  transform: scaleY(0);
+  opacity: 0;
+}
+.ribbon-system.untied .rb-h {
+  transform: scaleX(0);
+  opacity: 0;
+}
+
+/* ═══════════════════════
+   BOW (pointer-events on)
+═══════════════════════ */
+.bow-hotspot {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  pointer-events: all;
+  cursor: pointer;
+  width: 120px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bow-hotspot:hover .bow-svg-wrap {
+  transform: scale(1.07);
+}
+.bow-svg-wrap {
+  transition: transform 0.25s ease;
+}
+
+/* Bow fly-away animation */
+@keyframes bowFlyAway {
+  0%   { transform: translate(-50%,-50%) scale(1)   rotate(0deg);   opacity: 1; }
+  30%  { transform: translate(-50%,-90%) scale(1.25) rotate(-12deg); opacity: 1; }
+  70%  { transform: translate(20%,-200%) scale(0.8) rotate(30deg);  opacity: 0.6; }
+  100% { transform: translate(60%,-350%) scale(0.3) rotate(60deg);  opacity: 0; }
+}
+.bow-hotspot.flying {
+  animation: bowFlyAway 0.9s cubic-bezier(0.4,0,0.2,1) forwards;
+  pointer-events: none;
+}
+
+/* Pulsing glow on bow to invite click */
+@keyframes bowGlow {
+  0%,100% { filter: drop-shadow(0 0 4px rgba(200,80,80,0.4)); }
+  50%      { filter: drop-shadow(0 0 14px rgba(220,100,100,0.9)); }
+}
+.bow-svg-wrap {
+  animation: bowGlow 2.5s ease-in-out infinite;
+}
+.bow-svg-wrap.clicked {
+  animation: none;
+}
+
+.tap-hint {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: rgba(200,150,80,0.6);
+  text-transform: uppercase;
+  margin-top: 20px;
+  transition: opacity 0.5s;
+  animation: hintPulse 2.8s ease-in-out infinite;
+}
+.tap-hint.gone { opacity: 0; pointer-events: none; }
+@keyframes hintPulse { 0%,100%{opacity:0.35} 50%{opacity:0.9} }
+
+/* ═══════════════════════
+   CARD SLIDE OUT
+═══════════════════════ */
+.card-reveal {
+  width: 360px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 1.8s cubic-bezier(0.16,1,0.3,1);
+  margin-top: -2px;
+}
+.card-reveal.open {
+  max-height: 1300px;
+}
+
+.wedding-card {
+  background: var(--cream);
+  border: 1px solid var(--parchment);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 1.1s ease 0.85s, transform 1.5s cubic-bezier(0.16,1,0.3,1) 0.75s;
+}
+.card-reveal.open .wedding-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* subtle paper texture */
+.wedding-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(150,120,70,0.02) 4px, rgba(150,120,70,0.02) 5px),
+    repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(150,120,70,0.02) 4px, rgba(150,120,70,0.02) 5px);
+  pointer-events: none; z-index: 0;
+}
+
+.card-inner { position: relative; z-index: 1; padding: 38px 34px 34px; text-align: center; }
+
+/* Corner ornaments */
+.orn { position: absolute; width: 70px; height: 70px; opacity: 0.3; }
+.orn.tl { top:0;left:0; }
+.orn.tr { top:0;right:0; transform:scaleX(-1); }
+.orn.bl { bottom:0;left:0; transform:scaleY(-1); }
+.orn.br { bottom:0;right:0; transform:scale(-1,-1); }
+
+/* Gold rule */
+.rule { display:flex; align-items:center; gap:10px; margin:10px 0; }
+.rl { flex:1; height:0.5px; background:linear-gradient(90deg,transparent,var(--gold) 40%,transparent); }
+.rd { width:6px;height:6px;background:var(--gold);transform:rotate(45deg);flex-shrink:0; }
+
+/* Stagger fade */
+.si {
+  opacity:0;
+  transform:translateY(8px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.card-reveal.open .si { opacity:1; transform:none; }
+.d1{transition-delay:1.0s!important}
+.d2{transition-delay:1.2s!important}
+.d3{transition-delay:1.4s!important}
+.d4{transition-delay:1.55s!important}
+.d5{transition-delay:1.7s!important}
+.d6{transition-delay:1.85s!important}
+
+/* Couple image */
+.couple-wrap {
+  margin: 14px auto 8px;
+  width: 200px; height: 230px;
+  position: relative;
+  overflow: hidden;
+}
+.couple-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.couple-wrap::after {
+  content:'';
+  position:absolute;inset:0;
+  background: radial-gradient(ellipse at 50% 80%, transparent 40%, var(--cream) 85%);
+  pointer-events:none;
+}
+
+/* Names */
+.nm {
+  font-family:'Great Vibes',cursive;
+  font-size:56px;
+  color:var(--gold-dark);
+  line-height:1;
+  display:block;
+}
+.amp {
+  font-family:'Great Vibes',cursive;
+  font-size:30px;
+  color:var(--gold-light);
+  display:block;
+  line-height:1.3;
+}
+
+/* Date */
+.date-block {
+  padding:16px 0 14px;
+  border-top: 0.5px solid var(--parchment);
+  border-bottom: 0.5px solid var(--parchment);
+  margin:10px 0;
+}
+.d-month {
+  font-family:'Cinzel',serif;
+  font-size:9px; letter-spacing:5px;
+  color:var(--gold); text-transform:uppercase;
+  margin-bottom:4px;
+}
+.d-num {
+  font-family:'Cormorant Garamond',serif;
+  font-size:72px; font-weight:300;
+  color:var(--ink); line-height:1; letter-spacing:-3px;
+}
+.d-row { display:flex; justify-content:center; align-items:center; gap:28px; margin-top:8px; }
+.dc-lbl { font-family:'Cinzel',serif; font-size:7px; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:3px; }
+.dc-val { font-family:'Cormorant Garamond',serif; font-size:17px; font-style:italic; color:var(--ink); }
+.dvl { width:0.5px; height:30px; background:var(--parchment); }
+
+/* Location */
+.loc-btn {
+  display:inline-flex; align-items:center; gap:9px;
+  padding:11px 24px;
+  border:0.5px solid var(--gold); border-radius:2px;
+  text-decoration:none; cursor:pointer;
+  background:transparent;
+  position:relative; overflow:hidden;
+  margin-top:6px;
+}
+.loc-btn::before {
+  content:''; position:absolute; inset:0;
+  background:var(--gold);
+  transform:scaleX(0); transform-origin:left;
+  transition:transform 0.45s cubic-bezier(0.16,1,0.3,1);
+}
+.loc-btn:hover::before { transform:scaleX(1); }
+.loc-btn:hover .lc-txt { color:var(--cream); }
+.loc-btn:hover .lc-pin path, .loc-btn:hover .lc-pin circle { stroke:var(--cream); }
+.lc-pin { position:relative; z-index:1; }
+.lc-txt {
+  font-family:'Cormorant Garamond',serif;
+  font-size:14px; font-style:italic;
+  color:var(--gold); position:relative; z-index:1;
+  transition:color 0.45s; letter-spacing:0.4px;
+}
+
+/* Footer */
+.ft-text { font-family:'Cormorant Garamond',serif; font-size:13.5px; font-style:italic; color:var(--ink-light); line-height:1.75; margin:8px 0 0; }
+.ft-sig { font-family:'Great Vibes',cursive; font-size:26px; color:var(--gold-dark); margin-top:6px; }
+.ft-dots { font-size:11px; color:var(--gold); letter-spacing:8px; margin-top:8px; display:block; }
+</style>
+</head>
+<body>
+
+<canvas id="dust"></canvas>
+
+<div class="scene">
+
+  <!-- ══ ENVELOPE ══ -->
+  <div class="env-container">
+    <div class="env-body-wrap">
+
+      <!-- Envelope base (body + triangles, no flap) -->
+      <svg class="env-svg" viewBox="0 0 380 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#e8ddc8"/>
+            <stop offset="100%" stop-color="#d4c8a8"/>
+          </linearGradient>
+          <linearGradient id="lG" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#b8ac88"/>
+            <stop offset="100%" stop-color="#d4c8a8"/>
+          </linearGradient>
+          <linearGradient id="rG" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#d4c8a8"/>
+            <stop offset="100%" stop-color="#a8a080"/>
+          </linearGradient>
+        </defs>
+        <rect width="380" height="250" rx="3" fill="url(#bG)"/>
+        <polygon points="0,0 0,250 190,148" fill="url(#lG)" opacity="0.85"/>
+        <polygon points="380,0 380,250 190,148" fill="url(#rG)" opacity="0.85"/>
+        <polygon points="0,250 380,250 190,148" fill="#c8bc98" opacity="0.95"/>
+        <rect x="0.5" y="0.5" width="379" height="249" rx="2.5" fill="none" stroke="#b8965a" stroke-width="0.7" opacity="0.5"/>
+        <rect x="9" y="9" width="362" height="232" rx="1.5" fill="none" stroke="#b8965a" stroke-width="0.35" opacity="0.28"/>
+      </svg>
+
+      <!-- Flap (separate, rotates) -->
+      <div class="env-flap-wrap" id="envFlap">
+        <svg class="env-flap-svg" viewBox="0 0 380 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="fG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ddd0b0"/>
+              <stop offset="100%" stop-color="#c8bc98"/>
+            </linearGradient>
+          </defs>
+          <polygon points="0,0 380,0 190,155" fill="url(#fG)"/>
+          <polygon points="0,0 380,0 190,155" fill="none" stroke="#b8965a" stroke-width="0.7" opacity="0.4"/>
+          <text x="190" y="60" text-anchor="middle" font-family="'Great Vibes', cursive" font-size="30" fill="#9a7c4a" opacity="0.6">M &amp; L</text>
+        </svg>
+      </div>
+
+      <!-- Wax seal -->
+      <div class="seal-abs" id="sealEl">
+        <svg width="70" height="70" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer drip shape -->
+          <path d="M35 4
+            C35 4 48 8 54 15
+            C62 24 64 32 64 36
+            C64 52 51 66 35 66
+            C19 66 6 52 6 36
+            C6 32 8 24 16 15
+            C22 8 35 4 35 4Z"
+            fill="#7a0f0f"/>
+          <path d="M35 8
+            C35 8 46 11 52 18
+            C59 26 61 33 61 36
+            C61 50 49 63 35 63
+            C21 63 9 50 9 36
+            C9 33 11 26 18 18
+            C24 11 35 8 35 8Z"
+            fill="#9a1a1a"/>
+          <!-- Highlight drip -->
+          <path d="M28 10 C31 7 35 5 35 5 C35 5 30 9 28 14" fill="#c04040" opacity="0.35"/>
+          <!-- Star burst -->
+          <line x1="35" y1="12" x2="35" y2="22" stroke="#c85050" stroke-width="1" opacity="0.5"/>
+          <line x1="35" y1="50" x2="35" y2="60" stroke="#c85050" stroke-width="1" opacity="0.5"/>
+          <line x1="12" y1="36" x2="22" y2="36" stroke="#c85050" stroke-width="1" opacity="0.5"/>
+          <line x1="48" y1="36" x2="58" y2="36" stroke="#c85050" stroke-width="1" opacity="0.5"/>
+          <line x1="18" y1="18" x2="25" y2="25" stroke="#c85050" stroke-width="1" opacity="0.4"/>
+          <line x1="45" y1="47" x2="52" y2="54" stroke="#c85050" stroke-width="1" opacity="0.4"/>
+          <line x1="52" y1="18" x2="45" y2="25" stroke="#c85050" stroke-width="1" opacity="0.4"/>
+          <line x1="25" y1="47" x2="18" y2="54" stroke="#c85050" stroke-width="1" opacity="0.4"/>
+          <!-- Inner ring -->
+          <circle cx="35" cy="36" r="18" fill="none" stroke="#c85050" stroke-width="0.7" opacity="0.45"/>
+          <circle cx="35" cy="36" r="14" fill="none" stroke="#c85050" stroke-width="0.4" opacity="0.3"/>
+          <!-- Monogram -->
+          <text x="35" y="42" text-anchor="middle"
+                font-family="'Great Vibes', cursive"
+                font-size="20" fill="#f0d090"
+                style="font-family:'Great Vibes',cursive">M&amp;L</text>
+        </svg>
+      </div>
+
+      <!-- RIBBON -->
+      <div class="ribbon-system" id="ribbonSys">
+        <div class="rb-v"></div>
+        <div class="rb-h"></div>
+      </div>
+
+      <!-- BOW (clickable, outside ribbon-system so it stays interactive) -->
+      <div class="bow-hotspot" id="bowEl" onclick="openSequence()">
+        <div class="bow-svg-wrap" id="bowSvgWrap">
+          <svg width="110" height="88" viewBox="0 0 110 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bwL" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#e05050"/>
+                <stop offset="50%" stop-color="#b02020"/>
+                <stop offset="100%" stop-color="#7a0808"/>
+              </linearGradient>
+              <linearGradient id="bwR" x1="1" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#e05050"/>
+                <stop offset="50%" stop-color="#b02020"/>
+                <stop offset="100%" stop-color="#7a0808"/>
+              </linearGradient>
+              <linearGradient id="bwK" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#c03030"/>
+                <stop offset="100%" stop-color="#6a0808"/>
+              </linearGradient>
+              <radialGradient id="bwKR" cx="40%" cy="35%" r="60%">
+                <stop offset="0%" stop-color="#e06060"/>
+                <stop offset="100%" stop-color="#7a0a0a"/>
+              </radialGradient>
+              <!-- Fabric fold highlight -->
+              <linearGradient id="hlL" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="rgba(255,180,180,0.45)"/>
+                <stop offset="100%" stop-color="rgba(255,100,100,0)"/>
+              </linearGradient>
+              <linearGradient id="hlR" x1="1" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(255,180,180,0.45)"/>
+                <stop offset="100%" stop-color="rgba(255,100,100,0)"/>
+              </linearGradient>
+            </defs>
+
+            <!-- LEFT LOOP — outer shape -->
+            <path d="M50 42
+              C42 32 28 18 16 14
+              C8 11 3 16 4 24
+              C5 32 14 38 26 40
+              C36 41 46 40 50 42Z"
+              fill="url(#bwL)" stroke="#5a0505" stroke-width="0.8"/>
+            <!-- Left loop inner fold shadow -->
+            <path d="M50 42
+              C44 34 34 24 22 18
+              C14 14 7 18 8 25
+              C9 31 18 37 30 39"
+              fill="none" stroke="rgba(80,5,5,0.6)" stroke-width="1.5"/>
+            <!-- Left loop fabric highlight -->
+            <path d="M50 42 C44 34 32 22 20 16 C13 12 6 17 7 24"
+              fill="none" stroke="rgba(255,160,160,0.3)" stroke-width="2"/>
+            <!-- Left loop highlight patch -->
+            <path d="M14 16 C10 18 7 22 8 27 C18 22 32 26 46 40 C40 28 26 17 14 16Z"
+              fill="url(#hlL)" opacity="0.5"/>
+
+            <!-- RIGHT LOOP — outer shape -->
+            <path d="M60 42
+              C68 32 82 18 94 14
+              C102 11 107 16 106 24
+              C105 32 96 38 84 40
+              C74 41 64 40 60 42Z"
+              fill="url(#bwR)" stroke="#5a0505" stroke-width="0.8"/>
+            <!-- Right loop inner fold shadow -->
+            <path d="M60 42
+              C66 34 76 24 88 18
+              C96 14 103 18 102 25
+              C101 31 92 37 80 39"
+              fill="none" stroke="rgba(80,5,5,0.6)" stroke-width="1.5"/>
+            <!-- Right loop highlight patch -->
+            <path d="M96 16 C100 18 103 22 102 27 C92 22 78 26 64 40 C70 28 84 17 96 16Z"
+              fill="url(#hlR)" opacity="0.5"/>
+
+            <!-- LEFT TAIL -->
+            <path d="M52 48 C46 58 38 70 32 80 C30 83 28 85 26 86"
+              stroke="#8a0f0f" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <path d="M52 48 C46 58 38 70 32 80 C30 83 28 85 26 86"
+              stroke="#c04040" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.45"/>
+            <path d="M52 48 C46 58 38 70 32 80 C30 83 28 85 26 86"
+              stroke="rgba(255,150,150,0.25)" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+            <!-- RIGHT TAIL -->
+            <path d="M58 48 C64 58 72 70 78 80 C80 83 82 85 84 86"
+              stroke="#8a0f0f" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <path d="M58 48 C64 58 72 70 78 80 C80 83 82 85 84 86"
+              stroke="#c04040" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.45"/>
+            <path d="M58 48 C64 58 72 70 78 80 C80 83 82 85 84 86"
+              stroke="rgba(255,150,150,0.25)" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+            <!-- CENTER KNOT -->
+            <ellipse cx="55" cy="42" rx="13" ry="10" fill="url(#bwKR)" stroke="#4a0505" stroke-width="1"/>
+            <!-- Knot fold lines -->
+            <path d="M44 40 Q55 36 66 40" stroke="rgba(80,5,5,0.5)" stroke-width="1" fill="none"/>
+            <path d="M44 44 Q55 48 66 44" stroke="rgba(80,5,5,0.5)" stroke-width="1" fill="none"/>
+            <!-- Knot highlight -->
+            <ellipse cx="51" cy="39" rx="5" ry="3" fill="rgba(240,150,150,0.3)"/>
+          </svg>
+        </div>
+      </div>
+
+    </div><!-- /env-body-wrap -->
+  </div><!-- /env-container -->
+
+  <div class="tap-hint" id="tapHint">✦ &nbsp; Kliko fjongon për të hapur &nbsp; ✦</div>
+
+  <!-- ══ CARD ══ -->
+  <div class="card-reveal" id="cardReveal">
+    <div class="wedding-card">
+
+      <svg class="orn tl" viewBox="0 0 70 70" fill="none"><path d="M4 66C4 4 4 4 66 4" stroke="#9a7c4a" stroke-width="1.1"/><path d="M4 50C16 4 66 18 66 4" stroke="#9a7c4a" stroke-width="0.55"/><path d="M4 35C4 4 35 4" stroke="#9a7c4a" stroke-width="0.4" stroke-dasharray="2,3" opacity="0.4"/><circle cx="4" cy="4" r="2.5" fill="#9a7c4a"/><circle cx="4" cy="4" r="5" fill="none" stroke="#9a7c4a" stroke-width="0.45" opacity="0.35"/></svg>
+      <svg class="orn tr" viewBox="0 0 70 70" fill="none"><path d="M4 66C4 4 4 4 66 4" stroke="#9a7c4a" stroke-width="1.1"/><path d="M4 50C16 4 66 18 66 4" stroke="#9a7c4a" stroke-width="0.55"/><path d="M4 35C4 4 35 4" stroke="#9a7c4a" stroke-width="0.4" stroke-dasharray="2,3" opacity="0.4"/><circle cx="4" cy="4" r="2.5" fill="#9a7c4a"/><circle cx="4" cy="4" r="5" fill="none" stroke="#9a7c4a" stroke-width="0.45" opacity="0.35"/></svg>
+      <svg class="orn bl" viewBox="0 0 70 70" fill="none"><path d="M4 66C4 4 4 4 66 4" stroke="#9a7c4a" stroke-width="1.1"/><path d="M4 50C16 4 66 18 66 4" stroke="#9a7c4a" stroke-width="0.55"/><path d="M4 35C4 4 35 4" stroke="#9a7c4a" stroke-width="0.4" stroke-dasharray="2,3" opacity="0.4"/><circle cx="4" cy="4" r="2.5" fill="#9a7c4a"/><circle cx="4" cy="4" r="5" fill="none" stroke="#9a7c4a" stroke-width="0.45" opacity="0.35"/></svg>
+      <svg class="orn br" viewBox="0 0 70 70" fill="none"><path d="M4 66C4 4 4 4 66 4" stroke="#9a7c4a" stroke-width="1.1"/><path d="M4 50C16 4 66 18 66 4" stroke="#9a7c4a" stroke-width="0.55"/><path d="M4 35C4 4 35 4" stroke="#9a7c4a" stroke-width="0.4" stroke-dasharray="2,3" opacity="0.4"/><circle cx="4" cy="4" r="2.5" fill="#9a7c4a"/><circle cx="4" cy="4" r="5" fill="none" stroke="#9a7c4a" stroke-width="0.45" opacity="0.35"/></svg>
+
+      <div class="card-inner">
+
+        <div class="rule"><div class="rl"></div><div class="rd"></div><div class="rl"></div></div>
+
+        <!-- Couple photo -->
+        <div class="couple-wrap si d1" id="coupleImgWrap">
+          <img id="coupleImg" src="" alt="Mërgim &amp; Leonita">
+        </div>
+
+        <!-- Names -->
+        <span class="nm si d2">Mërgim</span>
+        <span class="amp si d2">&amp;</span>
+        <span class="nm si d2">Leonita</span>
+
+        <div class="rule si d3"><div class="rl"></div><div class="rd"></div><div class="rl"></div></div>
+
+        <p class="si d3" style="font-style:italic;color:var(--ink-mid);font-size:15px;line-height:1.85;letter-spacing:.2px;">
+          Me kënaqësi ju ftojmë të festojmë<br>
+          së bashku në dasmën tonë
+        </p>
+
+        <div class="date-block si d4">
+          <div class="d-month">Gusht &nbsp;·&nbsp; 2026</div>
+          <div class="d-num">02</div>
+          <div class="d-row">
+            <div><div class="dc-lbl">Dita</div><div class="dc-val">E Diel</div></div>
+            <div class="dvl"></div>
+            <div><div class="dc-lbl">Ora</div><div class="dc-val">18:00 - 19:00</div></div>
+          </div>
+        </div>
+
+        <div class="si d5">
+          <a class="loc-btn" href="https://maps.app.goo.gl/a27S2bsdryM2Dc3h9" target="_blank">
+            <svg class="lc-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8965a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span class="lc-txt">"Ana Princess" — Karrotice</span>
+          </a>
+        </div>
+
+        <div class="rule si d5" style="margin-top:18px;"><div class="rl"></div><div class="rd"></div><div class="rl"></div></div>
+
+        <p class="ft-text si d6">Prania juaj do ta bëjë këtë ditë<br>edhe më të veçantë</p>
+        <div class="ft-sig si d6">Me respekt, Familja Shashivari</div>
+        <span class="ft-dots si d6">✦ &nbsp; ✦ &nbsp; ✦</span>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* Floating gold dust */
+(function(){
+  const c=document.getElementById('dust'),ctx=c.getContext('2d');
+  let W,H,pts=[];
+  function sz(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  sz(); window.addEventListener('resize',sz);
+  for(let i=0;i<65;i++) pts.push({
+    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    r:Math.random()*1.5+0.3, s:Math.random()*0.3+0.1,
+    o:Math.random()*0.5+0.1, d:(Math.random()-.5)*0.2,
+    p:Math.random()*Math.PI*2
+  });
+  let f=0;
+  (function loop(){
+    ctx.clearRect(0,0,W,H); f++;
+    pts.forEach(p=>{
+      p.y-=p.s; p.x+=Math.sin(f*.013+p.p)*.28+p.d;
+      if(p.y<-8){p.y=H+8;p.x=Math.random()*W;}
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(184,150,90,${p.o*.5})`;ctx.fill();
+    });
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* Load couple image */
+(function(){
+  const img = document.getElementById('coupleImg');
+  // Will be replaced by python with real base64
+  img.src = 'data:image/png;base64,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';
+})();
+
+/* Main sequence */
+let done = false;
+
+function openSequence() {
+  if (done) return;
+  done = true;
+
+  const bow     = document.getElementById('bowEl');
+  const bowSvg  = document.getElementById('bowSvgWrap');
+  const ribbon  = document.getElementById('ribbonSys');
+  const flap    = document.getElementById('envFlap');
+  const seal    = document.getElementById('sealEl');
+  const hint    = document.getElementById('tapHint');
+  const card    = document.getElementById('cardReveal');
+
+  // Stop glow, hide hint
+  bowSvg.classList.add('clicked');
+  hint.classList.add('gone');
+
+  // 1. Bow flies away
+  bow.classList.add('flying');
+
+  // 2. Ribbon bands retract (slight delay)
+  setTimeout(()=>{ ribbon.classList.add('untied'); }, 150);
+
+  // 3. Seal fades + flap opens
+  setTimeout(()=>{
+    seal.classList.add('hidden');
+    flap.classList.add('open');
+  }, 700);
+
+  // 4. Card slides out from envelope
+  setTimeout(()=>{ card.classList.add('open'); }, 1450);
+}
+</script>
+</body>
+</html>
